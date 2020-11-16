@@ -28,15 +28,21 @@ void FKantanTimeSeriesPlotCustomization::CustomizeDetails(IDetailLayoutBuilder& 
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, XAxisCfg), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, bUseFixedTimeRange), UKantanTimeSeriesPlotBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, DisplayTimeRange), UKantanTimeSeriesPlotBase::StaticClass());
+	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, bDisplayInMinutes), UKantanTimeSeriesPlotBase::StaticClass());
+	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, bDrawInReversedOrder), UKantanTimeSeriesPlotBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, LowerTimeBound), UKantanTimeSeriesPlotBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, UpperTimeBound), UKantanTimeSeriesPlotBase::StaticClass());
 	//ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, bRoundTimeRange), UKantanTimeSeriesPlotBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, YAxisCfg), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, LowerValueBound), UKantanTimeSeriesPlotBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, UpperValueBound), UKantanTimeSeriesPlotBase::StaticClass());
+	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, RightYAxisCfg), UKantanCartesianChartBase::StaticClass());
+	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, RightLowerValueBound), UKantanTimeSeriesPlotBase::StaticClass());
+	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanTimeSeriesPlotBase, RightUpperValueBound), UKantanTimeSeriesPlotBase::StaticClass());
 	DetailBuilder.HideProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, PlotScale), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, DataPointSize), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanChart, UpdateTickRate), UKantanChart::StaticClass());
+	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, MarkerDataAsset), UKantanCartesianChartBase::StaticClass());
 
 	auto& PaddingGroup = ConfigCat.AddGroup(TEXT("Padding"), LOCTEXT("PaddingGroup", "Padding"));
 	

@@ -50,6 +50,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
 	int32 FontSize;
 
+	/*
+	If true, this Legend shows the Markers instead of the series itself
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	bool ShowSeriesMarker;
+	
+	/*
+	If true, this Legend shows the Markers instead of the series itself
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	UChartEventMarkerDataAsset* MarkerDataAsset;
+
+	/*
+	Amount of rows displayed in the legend, before a new column is started, if 0, only 1 column is used
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	int RowCount;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Config")
 	TWeakObjectPtr< UKantanCartesianChartBase > Chart;
 
@@ -94,6 +112,18 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
 	void SetChart(UKantanCartesianChartBase* InChart);
 
+	/*
+	Set the chart to associate the legend with.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetMarkerDataAsset(UChartEventMarkerDataAsset* InDA);
+
+	/*
+	Set the chart to associate the legend with.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetRowCount(int InRowCount);
+		
 public:
 	// UWidget interface
 	virtual void SynchronizeProperties() override;

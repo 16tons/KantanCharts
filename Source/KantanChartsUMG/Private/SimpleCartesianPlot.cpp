@@ -16,14 +16,16 @@ void USimpleCartesianPlot::BP_AddSeriesWithId(
 	FText Name,
 	bool bEnabled,
 	bool bShowPoints,
-	bool bShowLines
+	bool bShowLines,
+	bool bShowArea,
+	bool bUseRightYAxis
 	)
 {
 	bSuccess = AddSeries(Id, Name);
 	if (bSuccess)
 	{
 		EnableSeries(Id, bEnabled);
-		ConfigureSeries(Id, bShowPoints, bShowLines);
+		ConfigureSeries(Id, bShowPoints, bShowLines, bShowArea, bUseRightYAxis);
 	}
 }
 
@@ -32,11 +34,13 @@ void USimpleCartesianPlot::BP_AddSeries(
 	FText Name,
 	bool bEnabled,
 	bool bShowPoints,
-	bool bShowLines)
+	bool bShowLines,
+	bool bShowArea,
+	bool bUseRightYAxis)
 {
 	SeriesId = AddSeries(Name);
 	EnableSeries(SeriesId, bEnabled);
-	ConfigureSeries(SeriesId, bShowPoints, bShowLines);
+	ConfigureSeries(SeriesId, bShowPoints, bShowLines, bShowArea, bUseRightYAxis);
 }
 
 void USimpleCartesianPlot::BP_RemoveSeries(FName Id, bool& bSuccess)
@@ -73,6 +77,11 @@ FText USimpleCartesianPlot::GetSeriesName_Implementation(int32 SeriesIdx) const
 TArray< FKantanCartesianDatapoint > USimpleCartesianPlot::GetSeriesDatapoints_Implementation(int32 SeriesIdx) const
 {
 	return Elements[SeriesIdx].Points;
+}
+
+TArray< FKantanCartesianMarker > USimpleCartesianPlot::GetSeriesMarkers_Implementation(int32 SeriesIdx) const
+{
+	return Elements[SeriesIdx].Markers;
 }
 
 

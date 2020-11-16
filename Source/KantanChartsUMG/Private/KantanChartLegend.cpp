@@ -71,6 +71,24 @@ void UKantanChartLegend::SetChart(UKantanCartesianChartBase* InChart)
 	}
 }
 
+void UKantanChartLegend::SetMarkerDataAsset(UChartEventMarkerDataAsset* InDA)
+{
+	MarkerDataAsset = InDA;
+	if (MyWidget.IsValid())
+	{
+		MyWidget->SetMarkerDataAsset(MarkerDataAsset);
+	}
+}
+
+void UKantanChartLegend::SetRowCount(int InRowCount)
+{
+	RowCount = InRowCount;
+	if (MyWidget.IsValid())
+	{
+		MyWidget->SetRowCount(RowCount);
+	}
+}
+
 void UKantanChartLegend::SynchronizeProperties()
 {
 	Super::SynchronizeProperties();
@@ -80,6 +98,9 @@ void UKantanChartLegend::SynchronizeProperties()
 //	MyWidget->SetShowDataStyle(bShowDataStyle);
 	MyWidget->SetBackgroundOverride(&Background);
 	MyWidget->SetFontSizeOverride(FontSize);
+	MyWidget->SetShowSeriesMarker(ShowSeriesMarker);
+	MyWidget->SetMarkerDataAsset(MarkerDataAsset);
+	MyWidget->SetRowCount(RowCount);
 
 	TSharedPtr< SKantanCartesianChart > ChartWidget = Chart.IsValid() ? Chart->GetCartesianChart() : nullptr;
 	MyWidget->SetChart(ChartWidget);

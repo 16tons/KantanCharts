@@ -13,6 +13,7 @@
 #include "FloatRoundingLevel.h"
 #include "AxisUtility.h"
 #include "Interfaces/ICartesianChart.h"
+#include "ChartEventMarkerDataAsset.h"
 
 #include "Styling/SlateWidgetStyleAsset.h"
 
@@ -70,12 +71,14 @@ public:
 	virtual void SetDataPointSize(EKantanDataPointSize::Type InSize) override;
 	virtual void SetXAxisConfig(FCartesianAxisConfig const& InConfig) override;
 	virtual void SetYAxisConfig(FCartesianAxisConfig const& InConfig) override;
+	virtual void SetRightYAxisConfig(FCartesianAxisConfig const& InConfig) override;
 	virtual void SetAxisTitlePadding(FMargin const& InPadding) override;
 	virtual void SetAntialiasDataLines(bool bEnable) override;
 	virtual void SetOnUpdatePlotScale(FOnUpdatePlotScale Delegate) override;
+	virtual void SetMarkerDataAsset(UChartEventMarkerDataAsset* InDA) override;
 
 	virtual void EnableSeries(FName Id, bool bEnable) override;
-	virtual void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines) override;
+	virtual void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines, bool bDrawArea, bool bUseRightYAxis) override;
 	virtual void SetSeriesStyle(FName Id, FName StyleId) override;
 	virtual void ResetSeries(FName Id = NAME_None) override;
 	//virtual void ResetSeriesNotInDatasource() override;
@@ -88,6 +91,7 @@ public:
 	FName GetSeriesId(int32 Index) const;
 	FText GetSeriesLabel(int32 Index) const;
 	TArray< FKantanCartesianDatapoint > GetSeriesDatapoints(int32 Index) const;
+	TArray< FKantanCartesianMarker > GetSeriesMarkers(int32 Index) const;
 
 	virtual const FKantanCartesianChartStyle* GetChartStyle() const override
 	{
@@ -121,12 +125,12 @@ protected:
 
 protected:
 	// @TODO: Making use of LocalGeometry seems weird, since this transform should be independent of it
-	FSlateRenderTransform CartesianToPlotTransform(FGeometry const& LocalGeometry) const;
+	FSlateRenderTransform CartesianToPlotTransform(FGeometry const& LocalGeometry, bool bUseRightYAxis = false) const;
 
 	// Returns the interval between markers along each axis, in cartesian space
-	class FFloatRoundingLevel DetermineAxisRoundingLevel(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis) const;
+	virtual class FFloatRoundingLevel DetermineAxisRoundingLevel(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis, bool bDisplayMinutes = false) const;
 
-	AxisUtil::FAxisMarkerData DetermineAxisMarkerData(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis) const;
+	virtual AxisUtil::FAxisMarkerData DetermineAxisMarkerData(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis, bool bDisplayMinutes = false) const;
 
 	inline const FKantanSeriesStyle* FindSeriesStyle(FName SeriesStyleId) const
 	{
@@ -172,14 +176,21 @@ protected:
 		FCartesianAxisRange const& RangeX,
 		FCartesianAxisRange const& RangeY,
 		TArray< FVector2D >& OutPoints) const;
+	virtual void GetMarkerPointsToDraw(
+		TArray< FKantanCartesianMarker > const& InMarkers,
+		FCartesianAxisRange const& RangeX,
+		FCartesianAxisRange const& RangeY,
+		TArray< FVector2D >& OutPoints) const;
 
 	int32 DrawAxes(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 AxisLayerId, int32 LabelLayerId, FPlotMarkerData const& MarkerData) const;
-	int32 DrawPoints(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle) const;
-	int32 DrawLines(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle) const;
-	int32 DrawSeries(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle) const;
+	int32 DrawPoints(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, bool bUseRightYAxis) const;
+	int32 DrawLines(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, bool bUseRightYAxis) const;
+	int32 DrawArea(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, bool bUseRightYAxis) const;
+	int32 DrawMarkers(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianMarker > const& Markers, FKantanSeriesStyle const& SeriesStyle) const;
+	int32 DrawSeries(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, TArray< FKantanCartesianMarker > const& Markers, bool bUseRightYAxis) const;
 
 	void InvalidateCachedMarkerData(EAxis::Type Axis) const;
-	const AxisUtil::FAxisMarkerData& GetCachedMarkerData(EAxis::Type Axis, FGeometry const& PlotSpaceGeometry) const;
+	const AxisUtil::FAxisMarkerData& GetCachedMarkerData(EAxis::Type Axis, FGeometry const& PlotSpaceGeometry, bool bDisplayMinutes = false) const;
 
 public:
 	// FGCObject implementation
@@ -190,10 +201,12 @@ protected:
 	// General config
 	FCartesianAxisConfig XAxisCfg;
 	FCartesianAxisConfig YAxisCfg;
+	FCartesianAxisConfig RightYAxisCfg;
 	FMargin AxisTitlePadding;
 	FKantanCartesianPlotScale PlotScale;
 	EKantanDataPointSize::Type DataPointSize = EKantanDataPointSize::Medium;
 	bool bAntialiasDataLines = false;
+	UChartEventMarkerDataAsset* MarkerDataAsset;
 
 	FOnUpdatePlotScale OnUpdatePlotScaleDelegate;
 
@@ -213,6 +226,8 @@ protected:
 		bool bEnabled;			// Toggles series on/off
 		bool bDrawPoints;		// Draw datapoints
 		bool bDrawLines;		// Draw lines between datapoints
+		bool bDrawArea;			// Draw Area beneath the lines
+		bool bUseRightYAxis;	// Draw Plot using the scale on the right Y Axis
 		FName SeriesStyleId;	// Style to use. If NAME_None, default series style is used
 
 		FSeriesConfig() :
@@ -228,5 +243,8 @@ protected:
 
 	mutable TOptional< AxisUtil::FAxisMarkerData > XAxisMarkers;
 	mutable TOptional< AxisUtil::FAxisMarkerData > YAxisMarkers;
+	mutable TOptional< AxisUtil::FAxisMarkerData > RightYAxisMarkers;
+
+	FSlateColorBrush MyBrush = FSlateColorBrush(FLinearColor::White);
 };
 

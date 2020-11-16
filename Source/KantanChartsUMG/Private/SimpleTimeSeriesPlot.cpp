@@ -18,14 +18,16 @@ void USimpleTimeSeriesPlot::BP_AddSeriesWithId(
 	FText Name,
 	bool bEnabled,
 	bool bShowPoints,
-	bool bShowLines
+	bool bShowLines,
+	bool bShowArea,
+	bool bUseRightYAxis
 	)
 {
 	bSuccess = AddSeries(Id, Name);
 	if (bSuccess)
 	{
 		EnableSeries(Id, bEnabled);
-		ConfigureSeries(Id, bShowPoints, bShowLines);
+		ConfigureSeries(Id, bShowPoints, bShowLines, bShowArea, bUseRightYAxis);
 	}
 }
 
@@ -34,11 +36,13 @@ void USimpleTimeSeriesPlot::BP_AddSeries(
 	FText Name,
 	bool bEnabled,
 	bool bShowPoints,
-	bool bShowLines)
+	bool bShowLines,
+	bool bShowArea,
+	bool bUseRightYAxis)
 {
 	SeriesId = AddSeries(Name);
 	EnableSeries(SeriesId, bEnabled);
-	ConfigureSeries(SeriesId, bShowPoints, bShowLines);
+	ConfigureSeries(SeriesId, bShowPoints, bShowLines, bShowArea, bUseRightYAxis);
 }
 
 void USimpleTimeSeriesPlot::BP_RemoveSeries(FName Id, bool& bSuccess)
@@ -65,6 +69,13 @@ void USimpleTimeSeriesPlot::BP_AddDatapointNow(FName SeriesId, float Value, bool
 	bSuccess = AddDatapoint(SeriesId, Point);
 }
 
+void USimpleTimeSeriesPlot::BP_AddMarkerNow(FName SeriesId, int32 InMarkerId, bool& bSuccess)
+{
+	// Our outer is the UWidgetTree, and that has access to the UWorld (via UUserWidget, which is its outer)
+	auto const World = Cast< UWidgetTree >(GetOuter())->GetWorld();
+	auto const Time = World->GetTimeSeconds();
+	bSuccess = AddMarker(SeriesId, InMarkerId, Time);
+}
 
 int32 USimpleTimeSeriesPlot::GetNumSeries_Implementation() const
 {
@@ -86,6 +97,10 @@ TArray< FKantanCartesianDatapoint > USimpleTimeSeriesPlot::GetSeriesDatapoints_I
 	return Elements[SeriesIdx].Points;
 }
 
+TArray< FKantanCartesianMarker > USimpleTimeSeriesPlot::GetSeriesMarkers_Implementation(int32 SeriesIdx) const
+{
+	return Elements[SeriesIdx].Markers;
+}
 
 
 #undef LOCTEXT_NAMESPACE

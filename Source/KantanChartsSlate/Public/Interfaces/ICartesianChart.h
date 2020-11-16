@@ -4,6 +4,7 @@
 
 #include "Interfaces/IChartBase.h"
 #include "KantanCartesianTypes.h"
+#include "ChartEventMarkerDataAsset.h"
 
 
 struct FKantanCartesianChartStyle;
@@ -28,12 +29,14 @@ namespace KantanCharts {
 		virtual void SetDataPointSize(EKantanDataPointSize::Type InSize) = 0;
 		virtual void SetXAxisConfig(FCartesianAxisConfig const& InConfig) = 0;
 		virtual void SetYAxisConfig(FCartesianAxisConfig const& InConfig) = 0;
+		virtual void SetRightYAxisConfig(FCartesianAxisConfig const& InConfig) = 0;
 		virtual void SetAxisTitlePadding(FMargin const& InPadding) = 0;
 		virtual void SetAntialiasDataLines(bool bEnable) = 0;
 		virtual void SetOnUpdatePlotScale(FOnUpdatePlotScale Delegate) = 0;
+		virtual void SetMarkerDataAsset(UChartEventMarkerDataAsset* InDA)  = 0;
 
 		virtual void EnableSeries(FName Id, bool bEnable) = 0;
-		virtual void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines) = 0;
+		virtual void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines, bool bDrawArea, bool bUseRightYAxis) = 0;
 		virtual void SetSeriesStyle(FName Id, FName StyleId) = 0;
 		virtual void ResetSeries(FName Id = NAME_None) = 0;
 //		virtual void ResetSeriesNotInDatasource() = 0;

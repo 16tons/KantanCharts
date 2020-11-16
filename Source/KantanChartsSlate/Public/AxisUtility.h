@@ -70,7 +70,8 @@ namespace AxisUtil {
 
 	FFloatRoundingLevel DetermineAxisRoundingLevel(
 		FAxisTransform const& ValueToChartAxisTransform,	// Transform from value space to chart space along axis in question
-		float MinChartSpaceMarkerSeparation					// Minimum required separation between axis markers, in chart space
+		float MinChartSpaceMarkerSeparation,				// Minimum required separation between axis markers, in chart space
+		int32 DesiredRoundingLevel = 0						// Optional parameter to hand in a desired rounding level (e.g. 6 for conversion to minutes)
 		);
 
 	FAxisMarkerData DetermineAxisMarkerData(

@@ -33,6 +33,9 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Cartesian Datasource")
 	TArray< FKantanCartesianDatapoint > GetSeriesDatapoints(int32 SeriesIdx) const;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Cartesian Datasource")
+	TArray< FKantanCartesianMarker > GetSeriesMarkers(int32 SeriesIdx) const;
 };
 
 

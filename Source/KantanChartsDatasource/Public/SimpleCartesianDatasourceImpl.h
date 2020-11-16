@@ -43,6 +43,27 @@ struct KANTANCHARTSDATASOURCE_API FKantanSeriesDataList :
 		Clear();
 	}
 
+	void SetDatapointLimit(int32 Limit = 0)
+	{
+		check(Limit >= 0);
+		if (DatapointLimit == Limit)
+		{
+		    return;
+		}
+		DatapointLimit = Limit;
+
+	    for(auto& Elem : Elements)
+		{
+			int32 const Count = Elem.Points.Num();
+			if (Count > DatapointLimit)
+			{
+				auto Copy = MoveTemp(Elem.Points);
+				Elem.Points.SetNumUninitialized(DatapointLimit);
+				FMemory::Memcpy(Elem.Points.GetData(), Copy.GetData(), DatapointLimit * sizeof(Elem.Points[0]));
+			}
+		}
+	}
+
 	bool AddDatapoint(FName const& SeriesId, FVector2D const& Point)
 	{
 		auto S = Find(SeriesId);
@@ -50,7 +71,42 @@ struct KANTANCHARTSDATASOURCE_API FKantanSeriesDataList :
 		{
 			FKantanCartesianDatapoint Datapoint;
 			Datapoint.Coords = Point;
+			int32 const CurrentCount = S->Points.Num();
+			if (DatapointLimit != 0 && CurrentCount == DatapointLimit)
+			{
+			    FMemory::Memmove(S->Points.GetData(), S->Points.GetData() + 1, (DatapointLimit - 1) * sizeof(S->Points[0]));
+				S->Points.SetNumUninitialized(CurrentCount - 1, false);
+
+				if (S->Markers.Num() > 0)
+				{
+					for (int i = S->Markers.Num() - 1; i >= 0 ; --i)
+					{
+						auto& Marker = S->Markers[i];
+						if (Marker.Time < S->Points[0].Coords.X)
+						{
+							S->Markers.RemoveAt(0, i+1);
+							break;
+						}
+					}
+				}
+			}
 			S->Points.Add(Datapoint);
+			return true;
+		}
+
+		return false;
+	}
+
+	bool AddMarker(FName const& SeriesId, int32 InMarkerId, float Time)
+	{
+		auto S = Find(SeriesId);
+		if (S)
+		{
+			FKantanCartesianMarker Marker;
+			Marker.Time = Time;
+			Marker.MarkerId = InMarkerId;
+			S->Markers.Add(Marker);
+
 			return true;
 		}
 
@@ -78,6 +134,8 @@ struct KANTANCHARTSDATASOURCE_API FKantanSeriesDataList :
 	}
 	
 private:
+	int32 DatapointLimit = 0;
+
 	static const FString SeriesIdPrefix;
 };
 

@@ -8,9 +8,11 @@
 const FString FKantanSeriesDataList::SeriesIdPrefix = TEXT("KantanSimpleSeries");
 
 
-UKantanSimpleCartesianDatasource* UKantanSimpleCartesianDatasource::NewSimpleCartesianDatasource()
+UKantanSimpleCartesianDatasource* UKantanSimpleCartesianDatasource::NewSimpleCartesianDatasource(int32 MaxDatapoints)
 {
-	return NewObject< UKantanSimpleCartesianDatasource >(GetTransientPackage());
+	auto const Datasource = NewObject< UKantanSimpleCartesianDatasource >(GetTransientPackage());
+	Datasource->SetDatapointLimit(FMath::Max(MaxDatapoints, 0));
+	return Datasource;
 }
 
 
@@ -39,11 +41,20 @@ void UKantanSimpleCartesianDatasource::BP_RemoveAllSeries()
 	RemoveAllSeries();
 }
 
+void UKantanSimpleCartesianDatasource::BP_SetDatapointLimit(int32 Limit)
+{
+    SetDatapointLimit(FMath::Max(Limit, 0));
+}
+
 void UKantanSimpleCartesianDatasource::BP_AddDatapoint(FName SeriesId, FVector2D const& Point, bool& bSuccess)
 {
 	bSuccess = AddDatapoint(SeriesId, Point);
 }
 
+void UKantanSimpleCartesianDatasource::BP_AddMarker(FName SeriesId, float const Time, int32 MarkerId, bool& bSuccess)
+{
+	bSuccess = AddMarker(SeriesId, MarkerId, Time);
+}
 
 int32 UKantanSimpleCartesianDatasource::GetNumSeries_Implementation() const
 {
@@ -64,5 +75,11 @@ TArray< FKantanCartesianDatapoint > UKantanSimpleCartesianDatasource::GetSeriesD
 {
 	return Elements[SeriesIdx].Points;
 }
+
+TArray< FKantanCartesianMarker > UKantanSimpleCartesianDatasource::GetSeriesMarkers_Implementation(int32 SeriesIdx) const
+{
+	return Elements[SeriesIdx].Markers;
+}
+
 
 

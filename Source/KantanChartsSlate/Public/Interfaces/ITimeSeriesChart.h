@@ -12,8 +12,12 @@ namespace KantanCharts {
 	public:
 		virtual void SetFixedTimeRange(TOptional< float > InRange) = 0;
 		//virtual void SetRoundTimeRange(bool bInRound) = 0;
+		virtual void SetDisplayInMinutes(bool bDisplayInMinutes) = 0;
+		virtual void SetDrawInReversedOrder(bool bDrawInReversedOrder) = 0;
 		virtual void SetLowerValueBound(FCartesianRangeBound const& InBound) = 0;
 		virtual void SetUpperValueBound(FCartesianRangeBound const& InBound) = 0;
+		virtual void SetRightLowerValueBound(FCartesianRangeBound const& InBound) = 0;
+		virtual void SetRightUpperValueBound(FCartesianRangeBound const& InBound) = 0;
 		virtual void SetLowerTimeBound(FCartesianRangeBound const& InBound) = 0;
 		virtual void SetUpperTimeBound(FCartesianRangeBound const& InBound) = 0;
 	};

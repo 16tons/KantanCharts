@@ -272,7 +272,7 @@ FText SKantanChart::GetAxisTitleToShow(FCartesianAxisConfig const& AxisCfg, Axis
 		FText ExponentStr = FText::GetEmpty();
 		if(MarkerData.DisplayPower != 0)
 		{
-			ExponentStr = FText::Format(FText::FromString(TEXT("x10^{0}")),
+			ExponentStr = FText::Format(FText::FromString(TEXT("x10^{0} ")),
 				FText::AsNumber(MarkerData.DisplayPower)
 			);
 		}
@@ -291,7 +291,7 @@ FText SKantanChart::GetAxisTitleToShow(FCartesianAxisConfig const& AxisCfg, Axis
 		*/			
 		if(!UnitStr.IsEmpty() || !ExponentStr.IsEmpty() || !OffsetStr.IsEmpty())
 		{
-			Title = FText::Format(FText::FromString(TEXT("{0} ({1}{2}{3})")),
+			Title = FText::Format(FText::FromString(TEXT("{0} [{1}{2}{3}]")),
 				Title,
 				ExponentStr,
 				OffsetStr,
@@ -459,7 +459,8 @@ int32 SKantanChart::DrawFixedAxis(
 	bool bDrawMarkers,
 	bool bDrawLabels,
 	float AxisMarkerLength,
-	float AxisMarkerLabelGap
+	float AxisMarkerLabelGap,
+	bool bDrawLabelsInMinutes
 	) const
 {
 	const int32 AxisIdx = Axis == EAxis::X ? 0 : 1;
@@ -568,9 +569,9 @@ int32 SKantanChart::DrawFixedAxis(
 
 		if (bDrawLabels)
 		{
-			FText UnsignedLabelText = FText::FromString(RoundedMarker.Abs().MultiplierAsString(MarkerData.DisplayPower));
+			FText UnsignedLabelText = FText::FromString(RoundedMarker.Abs().MultiplierAsString(MarkerData.DisplayPower, bDrawLabelsInMinutes));
 			auto UnsignedLabelExtents = FontMeasureService->Measure(UnsignedLabelText, ValueFont);
-			FText LabelText = FText::FromString(RoundedMarker.MultiplierAsString(MarkerData.DisplayPower));
+			FText LabelText = FText::FromString(RoundedMarker.MultiplierAsString(MarkerData.DisplayPower, bDrawLabelsInMinutes));
 			auto LabelExtents = FontMeasureService->Measure(LabelText, ValueFont);
 
 			// Offset label perpendicularly to the axis based on which side of the plot the axis is on

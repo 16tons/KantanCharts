@@ -37,6 +37,7 @@ void FKantanCartesianPlotCustomization::CustomizeDetails(IDetailLayoutBuilder& D
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanChart, ChartTitle), UKantanChart::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, XAxisCfg), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, YAxisCfg), UKantanCartesianChartBase::StaticClass());
+	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, RightYAxisCfg), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, PlotScale), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanCartesianChartBase, DataPointSize), UKantanCartesianChartBase::StaticClass());
 	ConfigCat.AddProperty(GET_MEMBER_NAME_CHECKED(UKantanChart, UpdateTickRate), UKantanChart::StaticClass());

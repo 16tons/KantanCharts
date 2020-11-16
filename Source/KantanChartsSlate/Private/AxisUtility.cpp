@@ -8,11 +8,12 @@ namespace AxisUtil {
 
 	FFloatRoundingLevel DetermineAxisRoundingLevel(
 		FAxisTransform const& ValueToChartAxisTransform,
-		float MinChartSpaceMarkerSeparation
+		float MinChartSpaceMarkerSeparation,
+		int32 DesiredRoundinglevel
 		)
 	{
 		// Start with the default unit rounding level (10^0)
-		FFloatRoundingLevel RLevel(0);
+		FFloatRoundingLevel RLevel(0, 10, DesiredRoundinglevel);
 
 		// Since this function loops looking for the most suitable rounding level, there is a danger of infinite
 		// looping if the transform is dodgy. So bail right away if we find any NANs.

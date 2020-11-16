@@ -8,6 +8,7 @@
 struct FMargin;
 struct FSlateBrush;
 class SWidget;
+class UChartEventMarkerDataAsset;
 
 namespace KantanCharts {
 
@@ -25,6 +26,9 @@ namespace KantanCharts {
 		virtual void SetShowDataStyle(bool bShow) = 0;
 		virtual void SetBackgroundOverride(const FSlateBrush* Background) = 0;
 		virtual void SetFontSizeOverride(int32 FontSize) = 0;
+		virtual void SetShowSeriesMarker(bool bShow) = 0;
+		virtual void SetMarkerDataAsset(UChartEventMarkerDataAsset* MarkerDataAsset) = 0;
+		virtual void SetRowCount(int InCount) = 0;
 
 	public:
 		virtual ~IChartLegend() = default;

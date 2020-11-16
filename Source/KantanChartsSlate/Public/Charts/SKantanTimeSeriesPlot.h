@@ -40,11 +40,17 @@ public:
 
 //	void SetStyle(const FKantanCartesianChartStyle* InStyle);
 	virtual void SetFixedTimeRange(TOptional< float > InRange) override;
+	virtual void SetDisplayInMinutes(bool bDisplayMinutes) override;
+	virtual void SetDrawInReversedOrder(bool bDrawInReversedOrder) override;
 //	virtual void SetRoundTimeRange(bool bInRound) override;
 	virtual void SetLowerValueBound(FCartesianRangeBound const& InBound) override;
 	virtual void SetUpperValueBound(FCartesianRangeBound const& InBound) override;
+	virtual void SetRightLowerValueBound(FCartesianRangeBound const& InBound) override;
+	virtual void SetRightUpperValueBound(FCartesianRangeBound const& InBound) override;
 	virtual void SetLowerTimeBound(FCartesianRangeBound const& InBound) override;
 	virtual void SetUpperTimeBound(FCartesianRangeBound const& InBound) override;
+	
+	void SetExtendValueRangeToZero(bool bExtendToZero);
 
 	// @NOTE: All the following are needed only because VC++ doesn't support the use of the 'using' keyword
 	// for resolving inheritance via dominance warnings, and for some reason the pragma is failing to suppress
@@ -70,12 +76,14 @@ public:
 	virtual void SetDataPointSize(EKantanDataPointSize::Type InSize) override { SKantanCartesianChart::SetDataPointSize(InSize); }
 	virtual void SetXAxisConfig(FCartesianAxisConfig const& InConfig) override { SKantanCartesianChart::SetXAxisConfig(InConfig); }
 	virtual void SetYAxisConfig(FCartesianAxisConfig const& InConfig) override { SKantanCartesianChart::SetYAxisConfig(InConfig); }
+	virtual void SetRightYAxisConfig(FCartesianAxisConfig const& InConfig) override { SKantanCartesianChart::SetRightYAxisConfig(InConfig); }
 	virtual void SetAxisTitlePadding(FMargin const& InPadding) override { SKantanCartesianChart::SetAxisTitlePadding(InPadding); }
 	virtual void SetAntialiasDataLines(bool bEnable) override { SKantanCartesianChart::SetAntialiasDataLines(bEnable); }
 	virtual void SetOnUpdatePlotScale(FOnUpdatePlotScale Delegate) override { SKantanCartesianChart::SetOnUpdatePlotScale(Delegate); }
+	virtual void SetMarkerDataAsset(UChartEventMarkerDataAsset* InDA) override { SKantanCartesianChart::SetMarkerDataAsset(InDA); };
 
 	virtual void EnableSeries(FName Id, bool bEnable) override { SKantanCartesianChart::EnableSeries(Id, bEnable); }
-	virtual void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines) override { SKantanCartesianChart::ConfigureSeries(Id, bDrawPoints, bDrawLines); }
+	virtual void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines, bool bDrawArea, bool bUseRightYAxis) override { SKantanCartesianChart::ConfigureSeries(Id, bDrawPoints, bDrawLines, bDrawArea, bUseRightYAxis); }
 	virtual void SetSeriesStyle(FName Id, FName StyleId) override { SKantanCartesianChart::SetSeriesStyle(Id, StyleId); }
 	virtual void ResetSeries(FName Id = NAME_None) override { SKantanCartesianChart::ResetSeries(Id); }
 
@@ -87,10 +95,30 @@ public:
 	virtual FCartesianDataSnapshot const& GetCurrentSnapshot() const override { return SKantanCartesianChart::GetCurrentSnapshot(); }
 
 protected:
+	virtual int32 DrawChartArea(
+		EChartContentArea::Type Area,
+		const FPaintArgs& Args,
+		const FGeometry& Geometry,
+		const FGeometry& PlotSpaceGeometry,
+		const FSlateRect& MyClippingRect,
+		FSlateWindowElementList& OutDrawElements,
+		int32 LayerId,
+		const FWidgetStyle& InWidgetStyle,
+		bool bParentEnabled
+	) const override;
+
+	int32 DrawSeriesAtIdx(const int32 Idx, const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId) const;
+
 	virtual void OnActiveTick(double InCurrentTime, float InDeltaTime) override;
 
 	virtual void GetLinePointsToDraw(
 		TArray< FKantanCartesianDatapoint > const& InPoints,
+		FCartesianAxisRange const& RangeX,
+		FCartesianAxisRange const& RangeY,
+		TArray< FVector2D >& OutPoints) const override;
+
+	virtual void GetMarkerPointsToDraw(
+		TArray< FKantanCartesianMarker> const& InMarkers,
 		FCartesianAxisRange const& RangeX,
 		FCartesianAxisRange const& RangeY,
 		TArray< FVector2D >& OutPoints) const override;
@@ -100,9 +128,14 @@ protected:
 protected:
 	FCartesianRangeBound LowerValueBound;
 	FCartesianRangeBound UpperValueBound;
+	FCartesianRangeBound RightLowerValueBound;
+	FCartesianRangeBound RightUpperValueBound;
 	FCartesianRangeBound LowerTimeBound;
 	FCartesianRangeBound UpperTimeBound;
+	bool bExtendValueRangeToZero = true;
 	TOptional< float > FixedTimeRange;
+	bool bDisplayInMinutes;
+	bool bDrawInReversedOrder;
 	//bool bRoundTimeRange;
 };
 

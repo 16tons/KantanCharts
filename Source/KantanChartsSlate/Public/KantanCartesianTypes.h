@@ -152,6 +152,10 @@ struct FKantanCartesianPlotScale
 	UPROPERTY(EditAnywhere, Category = "Plot")
 	FCartesianAxisRange RangeY;
 
+	// Right Y-axis range to be plotted
+	UPROPERTY(EditAnywhere, Category = "Plot")
+	FCartesianAxisRange RangeRightY;
+
 	/**/
 
 	FKantanCartesianPlotScale() :
@@ -159,7 +163,8 @@ struct FKantanCartesianPlotScale
 		Scale(1.0f, 1.0f),
 		FocalCoordinates(0.0f, 0.0f),
 		RangeX(),
-		RangeY()
+		RangeY(),
+		RangeRightY()
 	{}
 
 	inline FTransform2D GetTransform_FixedScale(FVector2D const& LocalSize) const
@@ -171,8 +176,17 @@ struct FKantanCartesianPlotScale
 			);
 	}
 
-	inline FTransform2D GetTransform_FixedRange(FVector2D const& LocalSize) const
+	inline FTransform2D GetTransform_FixedRange(FVector2D const& LocalSize, bool bUseRightYAxis) const
 	{
+		if (bUseRightYAxis)
+		{
+			return Concatenate(
+				FTransform2D(-FVector2D(RangeX.Min, RangeRightY.Min)),
+				FTransform2D(FScale2D(1.0f / (RangeX.Max - RangeX.Min), 1.0f / (RangeRightY.Max - RangeRightY.Min))),
+				FTransform2D(FScale2D(LocalSize.X, -LocalSize.Y)),
+				FTransform2D(FVector2D(0.0f, LocalSize.Y))
+			);
+		}
 		return Concatenate(
 			FTransform2D(-FVector2D(RangeX.Min, RangeY.Min)),
 			FTransform2D(FScale2D(1.0f / (RangeX.Max - RangeX.Min), 1.0f / (RangeY.Max - RangeY.Min))),
@@ -188,7 +202,7 @@ struct FKantanCartesianPlotScale
 		{
 		case ECartesianScalingType::FixedScale:
 		{
-			auto PlotToCart = GetTransformToCartesianSpace(LocalSize);
+			auto PlotToCart = GetTransformToCartesianSpace(LocalSize, false);
 			return FCartesianAxisRange(
 				PlotToCart.TransformPoint(FVector2D(0.0f, 0.0f)).X,
 				PlotToCart.TransformPoint(FVector2D(LocalSize.X, 0.0f)).X
@@ -209,7 +223,7 @@ struct FKantanCartesianPlotScale
 		{
 		case ECartesianScalingType::FixedScale:
 		{
-			auto PlotToCart = GetTransformToCartesianSpace(LocalSize);
+			auto PlotToCart = GetTransformToCartesianSpace(LocalSize, false);
 			return FCartesianAxisRange(
 				PlotToCart.TransformPoint(FVector2D(0.0f, 0.0f)).Y,
 				PlotToCart.TransformPoint(FVector2D(0.0f, LocalSize.Y)).Y
@@ -224,23 +238,44 @@ struct FKantanCartesianPlotScale
 		}
 	}
 
-	FTransform2D GetTransformFromCartesianSpace(FVector2D const& LocalSize) const
+	inline FCartesianAxisRange GetRightYRange(FVector2D const& LocalSize) const
+	{
+		switch (Type)
+		{
+		case ECartesianScalingType::FixedScale:
+		{
+			auto PlotToCart = GetTransformToCartesianSpace(LocalSize, false);
+			return FCartesianAxisRange(
+				PlotToCart.TransformPoint(FVector2D(0.0f, 0.0f)).Y,
+				PlotToCart.TransformPoint(FVector2D(0.0f, LocalSize.Y)).Y
+			);
+		}
+		case ECartesianScalingType::FixedRange:
+			return RangeRightY;
+
+		default:
+			check(false);
+			return{};
+		}
+	}
+
+	FTransform2D GetTransformFromCartesianSpace(FVector2D const& LocalSize, bool bUseRightYAxis) const
 	{
 		switch (Type)
 		{
 		case ECartesianScalingType::FixedScale:
 			return GetTransform_FixedScale(LocalSize);
 		case ECartesianScalingType::FixedRange:
-			return GetTransform_FixedRange(LocalSize);
+			return GetTransform_FixedRange(LocalSize, bUseRightYAxis);
 		default:
 			ensure(false);
 			return FTransform2D();
 		}
 	}
 
-	FTransform2D GetTransformToCartesianSpace(FVector2D const& LocalSize) const
+	FTransform2D GetTransformToCartesianSpace(FVector2D const& LocalSize, bool bUseRightYAxis) const
 	{
-		return Inverse(GetTransformFromCartesianSpace(LocalSize));
+		return Inverse(GetTransformFromCartesianSpace(LocalSize, bUseRightYAxis));
 	}
 
 	void Validate()
@@ -263,6 +298,11 @@ struct FKantanCartesianPlotScale
 		{
 			RangeY.Set(0.0f, 1.0f);
 		}
+
+		if (RangeRightY.IsZero())
+		{
+			RangeRightY.Set(0.0f, 1.0f);
+		}
 	}
 };
 
@@ -279,16 +319,16 @@ enum class ECartesianRangeBoundType : uint8
 };
 
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FCartesianRangeBound
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "Range")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Range")
 	ECartesianRangeBoundType Type;
 
 	// Fixed value for the bound
-	UPROPERTY(EditAnywhere, Category = "Range")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Range")
 	float FixedBoundValue;
 
 	FCartesianRangeBound():

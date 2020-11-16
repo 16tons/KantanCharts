@@ -27,13 +27,13 @@ public:
 	Adds a new series to the plot, using the given ID. If the ID is already in use, the function will fail.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Data", Meta = (DisplayName = "Add Series With Id", Keywords = "Kantan Charts"))
-	void BP_AddSeriesWithId(bool& bSuccess, FName Id, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false);
+	void BP_AddSeriesWithId(bool& bSuccess, FName Id, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false, bool bShowArea = false, bool bUseRightYAxis = false);
 
 	/*
 	Adds a new series to the plot using an auto-generated ID, which is returned.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Data", Meta = (DisplayName = "Add Series", Keywords = "Kantan Charts"))
-	void BP_AddSeries(FName& SeriesId, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false);
+	void BP_AddSeries(FName& SeriesId, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false, bool bShowArea = false, bool bUseRightYAxis = false);
 
 	/*
 	Removes the series with the given ID.
@@ -59,6 +59,7 @@ public:
 	virtual FName GetSeriesId_Implementation(int32 SeriesIdx) const;
 	virtual FText GetSeriesName_Implementation(int32 SeriesIdx) const;
 	virtual TArray< FKantanCartesianDatapoint > GetSeriesDatapoints_Implementation(int32 SeriesIdx) const;
+	virtual TArray< FKantanCartesianMarker > GetSeriesMarkers_Implementation(int32 SeriesIdx) const;
 	//
 
 protected:

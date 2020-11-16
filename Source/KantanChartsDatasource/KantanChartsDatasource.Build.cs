@@ -11,9 +11,17 @@ public class KantanChartsDatasource : ModuleRules
 		PublicDependencyModuleNames.AddRange(
             new string[] {
                 "Core",
-                "CoreUObject"
+                "CoreUObject",
+				"Engine"
             }
         );
-	}
+
+        PrivateDependencyModuleNames.AddRange(
+            new string[] {
+                "Slate",
+                "SlateCore"
+            }
+        );
+    }
 }
 

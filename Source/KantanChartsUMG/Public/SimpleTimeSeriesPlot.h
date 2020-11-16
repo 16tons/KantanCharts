@@ -27,13 +27,13 @@ public:
 	Add a series using the specified ID. Will fail if the ID is already in use.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Data", Meta = (DisplayName = "Add Series With Id", Keywords = "Kantan Charts"))
-	void BP_AddSeriesWithId(bool& bSuccess, FName Id, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false);
+	void BP_AddSeriesWithId(bool& bSuccess, FName Id, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false, bool bShowArea = false, bool bUseRightYAxis = false);
 
 	/*
 	Add a series and return an auto-generated ID.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Data", Meta = (DisplayName = "Add Series", Keywords = "Kantan Charts"))
-	void BP_AddSeries(FName& SeriesId, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false);
+	void BP_AddSeries(FName& SeriesId, FText Name, bool bEnabled = true, bool bShowPoints = true, bool bShowLines = false, bool bShowArea = false, bool bUseRightYAxis = false);
 
 	/*
 	Remove existing series with given ID.
@@ -59,12 +59,20 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Data", Meta = (DisplayName = "Add Datapoint Now", Keywords = "Kantan Charts"))
 	void BP_AddDatapointNow(FName SeriesId, float Value, bool& bSuccess);
 
+	/*
+	Add a marker using the current game time as the x-axis value.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Data", Meta = (DisplayName = "Add Marker Now", Keywords = "Kantan Charts"))
+	void BP_AddMarkerNow(FName SeriesId, int32 MarkerId, bool& bSuccess);
+
+
 public:
 	// IKantanCartesianDatasourceInterface
 	virtual int32 GetNumSeries_Implementation() const;
 	virtual FName GetSeriesId_Implementation(int32 SeriesIdx) const;
 	virtual FText GetSeriesName_Implementation(int32 SeriesIdx) const;
 	virtual TArray< FKantanCartesianDatapoint > GetSeriesDatapoints_Implementation(int32 SeriesIdx) const;
+	virtual TArray< FKantanCartesianMarker > GetSeriesMarkers_Implementation(int32 SeriesIdx) const;
 	//
 
 protected:

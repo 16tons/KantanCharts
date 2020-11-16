@@ -174,7 +174,7 @@ struct FFloatRoundedValue
 		}
 	}
 
-	inline FString MultiplierAsString(int32 DisplayPower) const
+	inline FString MultiplierAsString(int32 DisplayPower, bool DisplayInMinutes = false) const
 	{
 		FNumberFormattingOptions Fmt;
 		Fmt.SetUseGrouping(false);
@@ -183,9 +183,39 @@ struct FFloatRoundedValue
 		Fmt.SetMinimumFractionalDigits(DecimalPlaces);
 		Fmt.SetMaximumFractionalDigits(DecimalPlaces);
 
-		auto Text = FText::Format(FText::FromString(TEXT("{0}")),
-			FText::AsNumber(GetFloatValue() * FMath::Pow(10.0f, -DisplayPower), &Fmt)
-			);
+		float ValueAsFloat = GetFloatValue() * FMath::Pow(10.0f, -DisplayPower);
+
+		FText Text;
+		if (DisplayInMinutes)
+		{
+			const int32 TotalSeconds = FMath::TruncToInt(ValueAsFloat);
+			const int32 NumHours = TotalSeconds / 3600;
+			const int32 NumMinutes = (TotalSeconds % 3600) / 60;
+			const int32 NumSeconds = TotalSeconds % 60;
+
+			Fmt.SetMinimumIntegralDigits(2);
+			Fmt.SetMaximumIntegralDigits(2);
+
+			FFormatNamedArguments Args;
+			Args.Add("Minutes", FText::AsNumber(NumMinutes, &Fmt));
+			Args.Add("Seconds", FText::AsNumber(NumSeconds, &Fmt));
+			if (NumHours > 0)
+			{
+				Args.Add("Hours", FText::AsNumber(NumHours, &Fmt));
+				Text = FText::Format(FTextFormat::FromString("{Hours}:{Minutes}:{Seconds}"), Args);
+			}
+			else
+			{
+				Text = FText::Format(FTextFormat::FromString("{Minutes}:{Seconds}"), Args);
+			}
+		}
+		else
+		{
+			Text = FText::Format(FText::FromString(TEXT("{0}")),
+				FText::AsNumber(ValueAsFloat, &Fmt)
+				);
+		}
+		
 		return Text.ToString();
 	}
 
@@ -262,7 +292,7 @@ Utility class for managing rounding axis values to even step sizes.
 class FFloatRoundingLevel
 {
 public:
-	FFloatRoundingLevel(int32 InPower = 0, int32 InBase = 10);
+	FFloatRoundingLevel(int32 InPower = 0, int32 InBase = 10, int32 InDesiredRounding = 0);
 
 public:
 	// Make a rounding level with a step size no smaller than the value provided
@@ -322,5 +352,5 @@ protected:
 	FFloatRounding Rounding;
 	int32 MultiplierIdx;
 
-	TArray< int32, TInlineAllocator< 4 > > MultiplierValues;
+	TArray< int32, TInlineAllocator< 5 > > MultiplierValues;
 };

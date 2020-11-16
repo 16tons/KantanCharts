@@ -11,11 +11,69 @@ UKantanTimeSeriesPlotBase::UKantanTimeSeriesPlotBase(FObjectInitializer const& O
 {
 	bUseFixedTimeRange = true;
 	DisplayTimeRange = 10.0f;
+	bDisplayInMinutes = true;
+	bDrawInReversedOrder = false;
 	//bRoundTimeRange = false;
 	LowerTimeBound.SetFitToData();
 	UpperTimeBound.SetFitToData();
 	LowerValueBound.SetFitToData();
 	UpperValueBound.SetFitToData();
+	RightLowerValueBound.SetFitToData();
+	RightUpperValueBound.SetFitToData();
+}
+
+void UKantanTimeSeriesPlotBase::SetLowerTimeBound(FCartesianRangeBound InLowerBound)
+{
+	LowerTimeBound = InLowerBound;
+	if (MyChart.IsValid())
+	{
+		GetTimeSeriesPlot()->SetLowerTimeBound(LowerTimeBound);
+	}
+}
+
+void UKantanTimeSeriesPlotBase::SetUpperTimeBound(FCartesianRangeBound InUpperBound)
+{
+	UpperTimeBound = InUpperBound;
+	if (MyChart.IsValid())
+	{
+		GetTimeSeriesPlot()->SetUpperTimeBound(UpperTimeBound);
+	}
+}
+
+void UKantanTimeSeriesPlotBase::SetLowerValueBound(FCartesianRangeBound InLowerBound)
+{
+	LowerValueBound = InLowerBound;
+	if (MyChart.IsValid())
+	{
+		GetTimeSeriesPlot()->SetLowerValueBound(LowerValueBound);
+	}
+}
+
+void UKantanTimeSeriesPlotBase::SetUpperValueBound(FCartesianRangeBound InUpperBound)
+{
+	UpperValueBound = InUpperBound;
+	if (MyChart.IsValid())
+	{
+		GetTimeSeriesPlot()->SetUpperValueBound(UpperValueBound);
+	}
+}
+
+void UKantanTimeSeriesPlotBase::SetRightLowerValueBound(FCartesianRangeBound InLowerBound)
+{
+	RightLowerValueBound = InLowerBound;
+	if (MyChart.IsValid())
+	{
+		GetTimeSeriesPlot()->SetRightLowerValueBound(RightLowerValueBound);
+	}
+}
+
+void UKantanTimeSeriesPlotBase::SetRightUpperValueBound(FCartesianRangeBound InUpperBound)
+{
+	RightUpperValueBound = InUpperBound;
+	if (MyChart.IsValid())
+	{
+		GetTimeSeriesPlot()->SetRightUpperValueBound(RightUpperValueBound);
+	}
 }
 
 void UKantanTimeSeriesPlotBase::SynchronizeProperties()
@@ -25,11 +83,16 @@ void UKantanTimeSeriesPlotBase::SynchronizeProperties()
 	auto TimeSeriesPlot = GetTimeSeriesPlot();
 
 	TimeSeriesPlot->SetFixedTimeRange(bUseFixedTimeRange ? TOptional< float >(DisplayTimeRange) : TOptional< float >());
+	TimeSeriesPlot->SetDisplayInMinutes(bDisplayInMinutes);
+	TimeSeriesPlot->SetDrawInReversedOrder(bDrawInReversedOrder);
 	//TimeSeriesPlot->SetRoundTimeRange(bRoundTimeRange);
 	TimeSeriesPlot->SetLowerTimeBound(LowerTimeBound);
 	TimeSeriesPlot->SetUpperTimeBound(UpperTimeBound);
 	TimeSeriesPlot->SetLowerValueBound(LowerValueBound);
 	TimeSeriesPlot->SetUpperValueBound(UpperValueBound);
+	TimeSeriesPlot->SetRightLowerValueBound(RightLowerValueBound);
+	TimeSeriesPlot->SetRightUpperValueBound(RightUpperValueBound);
+	TimeSeriesPlot->SetExtendValueRangeToZero(bExtendValueRangeToZero);
 }
 
 TSharedRef< SWidget > UKantanTimeSeriesPlotBase::RebuildWidget()
@@ -58,7 +121,7 @@ void UKantanTimeSeriesPlotBase::InitPreview()
 	{
 		auto Id = TimeSeriesPlot->GetSeriesId(Idx);
 		TimeSeriesPlot->EnableSeries(Id, true);
-		TimeSeriesPlot->ConfigureSeries(Id, false, true);
+		TimeSeriesPlot->ConfigureSeries(Id, false, true, false, false);
 	}
 }
 

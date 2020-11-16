@@ -70,6 +70,12 @@ public:
 	FCartesianAxisConfig YAxisCfg;
 
 	/*
+	Right Y axis configuration.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", Meta = (DisplayName = "Right Y Axis", ConfigAxisType = "Y"))
+	FCartesianAxisConfig RightYAxisCfg;
+
+	/*
 	Padding around axis titles.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
@@ -92,6 +98,13 @@ public:
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, AdvancedDisplay, Category = "Config")
 	bool bAntialias;
+
+	/*
+	DataAsset of EKantanCartesianMarkerType to FSlateBrush & FText, representing the Icons & Displaytexts for the different type of event markers
+	*/
+	UPROPERTY(EditAnywhere, Category = "Config")
+	UChartEventMarkerDataAsset* MarkerDataAsset;
+
 
 public:
 	UKantanCartesianChartBase(FObjectInitializer const&);
@@ -128,11 +141,17 @@ public:
 	void SetYAxisConfig(FCartesianAxisConfig const& InCfg);
 
 	/*
+	Set right Y axis configuration.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetRightYAxisConfig(FCartesianAxisConfig const& InCfg);
+
+	/*
 	Set padding around axis titles.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
 	void SetAxisTitlePadding(FMargin const& InPadding);
-
+	
 	/*
 	Set up a manual series style for the given series id. Manual styles will take precedence over
 	default and auto styles.
@@ -151,7 +170,7 @@ public:
 	Configure whether points and/or lines should be drawn for the given series.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Series", Meta = (Keywords = "Kantan Charts"))
-	void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines);
+	void ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines, bool bDrawArea, bool bUseRightYAxis);
 
 	/*
 	Set the drawing style for the given series.

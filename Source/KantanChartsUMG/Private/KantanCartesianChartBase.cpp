@@ -81,6 +81,15 @@ void UKantanCartesianChartBase::SetYAxisConfig(FCartesianAxisConfig const& InCfg
 	}
 }
 
+void UKantanCartesianChartBase::SetRightYAxisConfig(FCartesianAxisConfig const& InCfg)
+{
+	RightYAxisCfg = InCfg;
+	if (MyChart.IsValid())
+	{
+		GetCartesianChart()->SetYAxisConfig(RightYAxisCfg);
+	}
+}
+
 void UKantanCartesianChartBase::SetAxisTitlePadding(FMargin const& InPadding)
 {
 	AxisTitlePadding = InPadding;
@@ -113,11 +122,11 @@ void UKantanCartesianChartBase::EnableSeries(FName Id, bool bEnable)
 	}
 }
 
-void UKantanCartesianChartBase::ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines)
+void UKantanCartesianChartBase::ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines, bool bDrawArea, bool bUseRightYAxis)
 {
 	if (MyChart.IsValid())
 	{
-		GetCartesianChart()->ConfigureSeries(Id, bDrawPoints, bDrawLines);
+		GetCartesianChart()->ConfigureSeries(Id, bDrawPoints, bDrawLines, bDrawArea, bUseRightYAxis);
 	}
 }
 /*
@@ -163,10 +172,12 @@ void UKantanCartesianChartBase::SynchronizeProperties()
 
 	CartesianChart->SetXAxisConfig(XAxisCfg);
 	CartesianChart->SetYAxisConfig(YAxisCfg);
+	CartesianChart->SetRightYAxisConfig(RightYAxisCfg);
 	CartesianChart->SetAxisTitlePadding(AxisTitlePadding);
 	CartesianChart->SetPlotScale(PlotScale);
 	CartesianChart->SetDataPointSize(DataPointSize);
 	CartesianChart->SetAntialiasDataLines(bAntialias);
+	CartesianChart->SetMarkerDataAsset(MarkerDataAsset);
 
 	CartesianChart->SetUseAutoPerSeriesStyles(true);
 

@@ -14,11 +14,13 @@ struct FKantanSeriesData
 	FName Id;
 	FText Name;
 	TArray< FKantanCartesianDatapoint > Points;
+	TArray< FKantanCartesianMarker > Markers;
 
 	FKantanSeriesData() :
 		Id(NAME_None),
 		Name(),
-		Points()
+		Points(),
+		Markers()
 	{}
 };
 
@@ -36,6 +38,7 @@ struct FCartesianDataSnapshot :
 			Series.Id = IKantanCartesianDatasourceInterface::Execute_GetSeriesId(Datasource, Idx);
 			Series.Name = IKantanCartesianDatasourceInterface::Execute_GetSeriesName(Datasource, Idx);
 			Series.Points = IKantanCartesianDatasourceInterface::Execute_GetSeriesDatapoints(Datasource, Idx);
+			Series.Markers = IKantanCartesianDatasourceInterface::Execute_GetSeriesMarkers(Datasource, Idx);
 			Elements.Add(Series);
 		}
 	}
@@ -45,7 +48,7 @@ struct FCartesianDataSnapshot :
 	{
 		auto& Series = Elements[Index];
 
-		FFloatInterval Range(0, 0);
+		FFloatInterval Range(FLT_MAX, -FLT_MAX);
 		if(Series.Points.Num() > 0)
 		{
 			const int32 ComponentIdx = Axis == EAxis::X ? 0 : 1;
@@ -56,7 +59,6 @@ struct FCartesianDataSnapshot :
 			}
 			else
 			{
-				Range = FFloatInterval(FLT_MAX, -FLT_MAX);
 				for(auto& Pnt : Series.Points)
 				{
 					Range.Min = FMath::Min(Range.Min, Pnt.Coords.Component(ComponentIdx));
@@ -68,16 +70,16 @@ struct FCartesianDataSnapshot :
 		return Range;
 	}
 
-	FFloatInterval GetDataRange(EAxis::Type Axis, bool bIsAscending, const TArray< int32 >& SeriesToInclude) const
+	FFloatInterval GetDataRange(EAxis::Type Axis, bool bIsAscending, const TArray< int32 >& SeriesToInclude, bool bFromZero = true) const
 	{
-		FFloatInterval Range(0, 0);
+		FFloatInterval Range = bFromZero ? FFloatInterval(0, 0) : FFloatInterval(FLT_MAX, -FLT_MAX);
 		for(auto& SeriesIdx : SeriesToInclude)
 		{
 			auto SeriesRange = GetSeriesRange(SeriesIdx, Axis, bIsAscending);
 			Range.Min = FMath::Min(Range.Min, SeriesRange.Min);
 			Range.Max = FMath::Max(Range.Max, SeriesRange.Max);
 		}
-		return Range;// Range.IsInversed() ? FCartesianAxisRange(0.0f, 0.0f) : Range;
+		return Range;
 	}
 };
 

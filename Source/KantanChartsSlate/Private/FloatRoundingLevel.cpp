@@ -3,14 +3,21 @@
 #include "FloatRoundingLevel.h"
 
 
-FFloatRoundingLevel::FFloatRoundingLevel(int32 InPower, int32 InBase)
+FFloatRoundingLevel::FFloatRoundingLevel(int32 InPower, int32 InBase, int32 InDesiredRounding)
 {
 	Rounding.Base = InBase;
 	Rounding.Power = InPower;
 
-	MultiplierValues.Add(1);
-	MultiplierValues.Add(2);
-	MultiplierValues.Add(5);
+	if (InDesiredRounding == 0)
+	{
+		MultiplierValues.Add(1);
+		MultiplierValues.Add(2);
+		MultiplierValues.Add(5);
+	}
+	else
+	{
+		MultiplierValues.Add(InDesiredRounding);
+	}
 
 	SetMultiplierIndex(0);
 }

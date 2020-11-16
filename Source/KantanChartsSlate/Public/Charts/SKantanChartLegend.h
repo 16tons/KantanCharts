@@ -31,6 +31,7 @@ public:
 		SLATE_ARGUMENT(bool, bShowDataStyle)
 		SLATE_ARGUMENT(const FSlateBrush*, BackgroundOverride)
 		SLATE_ARGUMENT(int32, FontSizeOverride)
+		SLATE_ARGUMENT(bool, bShowSeriesMarker)
 	SLATE_END_ARGS()
 
 	/**
@@ -51,6 +52,9 @@ public:
 	virtual void SetShowDataStyle(bool bShow) override;
 	virtual void SetBackgroundOverride(const FSlateBrush* Background) override;
 	virtual void SetFontSizeOverride(int32 FontSize) override;
+	virtual void SetShowSeriesMarker(bool bShow) override;
+	virtual void SetMarkerDataAsset(UChartEventMarkerDataAsset* InDA) override;
+	virtual void SetRowCount(int InCount) override;
 
 protected:
 	FSlateFontInfo GetLegendFont() const;
@@ -61,6 +65,9 @@ protected:
 	bool bShowDataStyle;
 	const FSlateBrush* BackgroundOverride;
 	int32 FontSizeOverride;
+	bool bShowSeriesMarker;
+	UChartEventMarkerDataAsset* MarkerDataAsset;
+	int RowCount;
 
 	//TWeakPtr< SKantanCartesianChart > ChartPtr;
 	TWeakPtr< KantanCharts::ICartesianChart > ChartPtr;

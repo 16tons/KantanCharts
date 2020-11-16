@@ -16,5 +16,15 @@ struct FKantanCartesianDatapoint
 	FVector2D Coords;
 };
 
+USTRUCT(BlueprintType)
+struct FKantanCartesianMarker
+{
+	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	float Time;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	int32 MarkerId;
+};
 

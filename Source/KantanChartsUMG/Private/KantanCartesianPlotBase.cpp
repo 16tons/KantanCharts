@@ -31,7 +31,7 @@ void UKantanCartesianPlotBase::InitPreview()
 	{
 		auto Id = CartesianChart->GetSeriesId(Idx);
 		CartesianChart->EnableSeries(Id, true);
-		CartesianChart->ConfigureSeries(Id, true, false);
+		CartesianChart->ConfigureSeries(Id, true, false, false, false);
 	}
 }
 

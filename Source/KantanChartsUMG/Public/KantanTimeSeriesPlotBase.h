@@ -27,6 +27,18 @@ public:
 	*/
 	UPROPERTY(EditAnywhere, Category = "Config", Meta = (EditCondition = "bUseFixedTimeRange"))
 	float DisplayTimeRange;
+	
+	/*
+	The length of time to display data for.
+	*/
+	UPROPERTY(EditAnywhere, Category = "Config", Meta = (EditCondition = "bUseFixedTimeRange"))
+	bool bDisplayInMinutes;
+
+	/*
+	Draw the Series in Reversed Order.
+	*/
+	UPROPERTY(EditAnywhere, Category = "Config")
+	bool bDrawInReversedOrder;
 
 	/*
 	Whether or not to round off the displayed time range.
@@ -37,31 +49,84 @@ public:
 	/*
 	Lower bound for the X (time) axis.
 	*/
-	UPROPERTY(EditAnywhere, Category = "Config", Meta = (EditCondition = "!bUseFixedTimeRange"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", Meta = (EditCondition = "!bUseFixedTimeRange"))
 	FCartesianRangeBound LowerTimeBound;
 
 	/*
 	Upper bound for the X (time) axis.
 	*/
-	UPROPERTY(EditAnywhere, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
 	FCartesianRangeBound UpperTimeBound;
 
 	/*
 	Lower bound for the Y (value) axis.
 	*/
-	UPROPERTY(EditAnywhere, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
 	FCartesianRangeBound LowerValueBound;
 
 	/*
 	Upper bound for the Y (value) axis.
 	*/
-	UPROPERTY(EditAnywhere, Category = "Config")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
 	FCartesianRangeBound UpperValueBound;
+
+	/*
+	Lower bound for the Right Y (value) axis.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	FCartesianRangeBound RightLowerValueBound;
+
+	/*
+	Upper bound for the Right Y (value) axis.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config")
+	FCartesianRangeBound RightUpperValueBound;
+
+	/*
+	If true and Fit to Data bounds are used for the Y axis, the axis range will be extended up or down as necessary, to include zero.
+	*/
+	UPROPERTY(EditAnywhere, Category = "Config")
+	bool bExtendValueRangeToZero = true;
 
 public:
 	UKantanTimeSeriesPlotBase(FObjectInitializer const&);
 
 public:
+	/*
+	Update lower time bound.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetLowerTimeBound(FCartesianRangeBound InLowerBound);
+
+	/*
+	Update upper time bound.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetUpperTimeBound(FCartesianRangeBound InUpperBound);
+
+	/*
+	Update lower value bound.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetLowerValueBound(FCartesianRangeBound InLowerBound);
+
+	/*
+	Update upper value bound.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetUpperValueBound(FCartesianRangeBound InUpperBound);
+
+	/*
+	Update right lower value bound.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetRightLowerValueBound(FCartesianRangeBound InLowerBound);
+
+	/*
+	Update right upper value bound.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Config", Meta = (Keywords = "Kantan Charts"))
+	void SetRightUpperValueBound(FCartesianRangeBound InUpperBound);
 
 public:
 	// UWidget interface

@@ -140,9 +140,19 @@ void SKantanCartesianChart::SetYAxisConfig(FCartesianAxisConfig const& InConfig)
 	YAxisCfg = InConfig;
 }
 
+void SKantanCartesianChart::SetRightYAxisConfig(FCartesianAxisConfig const& InConfig)
+{
+	RightYAxisCfg = InConfig;
+}
+
 void SKantanCartesianChart::SetAntialiasDataLines(bool bEnable)
 {
 	bAntialiasDataLines = bEnable;
+}
+
+void SKantanCartesianChart::SetMarkerDataAsset(UChartEventMarkerDataAsset* InDA)
+{
+	MarkerDataAsset = InDA;
 }
 
 void SKantanCartesianChart::SetOnUpdatePlotScale(FOnUpdatePlotScale Delegate)
@@ -156,11 +166,13 @@ void SKantanCartesianChart::EnableSeries(FName Id, bool bEnable)
 	Cfg.bEnabled = bEnable;
 }
 
-void SKantanCartesianChart::ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines)
+void SKantanCartesianChart::ConfigureSeries(FName Id, bool bDrawPoints, bool bDrawLines, bool bDrawArea, bool bUseRightYAxis)
 {
 	auto& Cfg = SeriesConfig.FindOrAdd(Id);
 	Cfg.bDrawPoints = bDrawPoints;
 	Cfg.bDrawLines = bDrawLines;
+	Cfg.bDrawArea = bDrawArea;
+	Cfg.bUseRightYAxis = bUseRightYAxis;
 }
 
 void SKantanCartesianChart::SetSeriesStyle(FName Id, FName StyleId)
@@ -254,6 +266,15 @@ TArray< FKantanCartesianDatapoint > SKantanCartesianChart::GetSeriesDatapoints(i
 		TArray < FKantanCartesianDatapoint > {};
 		*/
 	return DataSnapshot.Elements[Index].Points;
+}
+
+TArray< FKantanCartesianMarker > SKantanCartesianChart::GetSeriesMarkers(int32 Index) const
+{
+	/*	return DatasourceInterface ?
+			IKantanCartesianDatasourceInterface::Execute_GetSeriesMarkers(DatasourceInterface, Index) :
+			TArray < FKantanCartesianMarker > {};
+			*/
+	return DataSnapshot.Elements[Index].Markers;
 }
 
 FKantanSeriesStyle const& SKantanCartesianChart::GetSeriesStyle(FName SeriesId) const
@@ -447,16 +468,10 @@ FName SKantanCartesianChart::GetNextSeriesStyle() const
 
 FCartesianAxisRange SKantanCartesianChart::ValidateAxisDisplayRange(FCartesianAxisRange InRange)
 {
-	if(InRange.ContainsNaNOrInf())
+	if(InRange.ContainsNaNOrInf() || InRange.Min > InRange.Max)
 	{
 		// @TODO: Log error
 		return FCartesianAxisRange(-1.0f, 1.0f);
-	}
-
-	// Normalize
-	if(InRange.Min > InRange.Max)
-	{
-		Swap(InRange.Min, InRange.Max);
 	}
 
 	// Disallow zero sized range
@@ -560,7 +575,7 @@ int32 SKantanCartesianChart::DrawChartArea(
 	case EChartContentArea::YAxisRightTitle:
 		if (YAxisCfg.RightTopAxis.bEnabled && YAxisCfg.RightTopAxis.bShowTitle)
 		{
-			DrawYAxisTitle(Geometry, SnappedClippingRect, OutDrawElements, RetLayerId, YAxisCfg, GetCachedMarkerData(EAxis::Y, PlotSpaceGeometry));
+			DrawYAxisTitle(Geometry, SnappedClippingRect, OutDrawElements, RetLayerId, RightYAxisCfg, GetCachedMarkerData(EAxis::Y, PlotSpaceGeometry));
 		}
 		break;
 
@@ -629,10 +644,10 @@ int32 SKantanCartesianChart::DrawChartArea(
 				SnappedClippingRect,
 				OutDrawElements,
 				RetLayerId,
-				EAxis::Y,
-				AxisUtil::FAxisTransform::FromTransform2D(CartesianToPlotTransform(PlotSpaceGeometry), 1 /* Y axis */),
+				EAxis::Z,
+				AxisUtil::FAxisTransform::FromTransform2D(CartesianToPlotTransform(PlotSpaceGeometry, true), 1 /* Y axis */),
 				EChartAxisPosition::RightTop,
-				GetCachedMarkerData(EAxis::Y, PlotSpaceGeometry),
+				GetCachedMarkerData(EAxis::Z, PlotSpaceGeometry),
 				YAxisCfg.RightTopAxis.bShowMarkers,
 				YAxisCfg.RightTopAxis.bShowLabels,
 				ChartConstants::AxisMarkerLength,
@@ -686,10 +701,11 @@ int32 SKantanCartesianChart::DrawChartArea(
 			}
 
 			const auto Points = GetSeriesDatapoints(Idx);
+			const auto Markers = GetSeriesMarkers(Idx);
 			auto const& SeriesStyle = GetSeriesStyle(SeriesId);
 
 			// @TODO: Sort out layers, maybe need to separate out DrawAxes into DrawAxisLines and DrawAxisLabels
-			DrawSeries(PlotSpaceGeometry, DataClipRect, OutDrawElements, AxisLayer + 1, SeriesId, Points, SeriesStyle);
+			DrawSeries(PlotSpaceGeometry, DataClipRect, OutDrawElements, AxisLayer + 1, SeriesId, Points, SeriesStyle, Markers, Config.bUseRightYAxis);
 		}
 
 		OutDrawElements.PopClip();
@@ -742,6 +758,7 @@ void SKantanCartesianChart::Tick(const FGeometry& AllottedGeometry, const double
 	// was calculated, or in direct response to a change to some setting, or data update leading to altered plot scale.
 	InvalidateCachedMarkerData(EAxis::X);
 	InvalidateCachedMarkerData(EAxis::Y);
+	InvalidateCachedMarkerData(EAxis::Z);
 
 	SKantanChart::Tick(AllottedGeometry, InCurrentTime, InDeltaTime);
 }
@@ -794,7 +811,22 @@ void SKantanCartesianChart::GetLinePointsToDraw(
 	}
 }
 
-int32 SKantanCartesianChart::DrawPoints(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle) const
+void SKantanCartesianChart::GetMarkerPointsToDraw(
+	TArray< FKantanCartesianMarker > const& InMarkers,
+	FCartesianAxisRange const& RangeX,
+	FCartesianAxisRange const& RangeY,
+	TArray< FVector2D >& OutPoints) const
+{
+	auto const Count = InMarkers.Num();
+	OutPoints.SetNumUninitialized(Count * 2);
+	for (int32 Idx = 0; Idx < Count; ++Idx)
+	{
+		OutPoints[Idx * 2] = FVector2D(InMarkers[Idx].Time, RangeY.Min);
+		OutPoints[Idx * 2 + 1] = FVector2D(InMarkers[Idx].Time, RangeY.Max);
+	}
+}
+
+int32 SKantanCartesianChart::DrawPoints(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, bool bUseRightYAxis) const
 {
 	++LayerId;
 
@@ -808,18 +840,18 @@ int32 SKantanCartesianChart::DrawPoints(const FGeometry& PlotSpaceGeometry, cons
 
 	TArray< FVector2D > DrawPoints;
 	GetPointsToDraw(Points, RangeX, RangeY, DrawPoints);
-	auto const CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry);
+	auto const CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry, bUseRightYAxis);
 
 	Element->RenderSeries(PlotSpaceGeometry, ClipRect, CartesianToPlotXform, MoveTemp(DrawPoints), LayerId, OutDrawElements);
 
 	return LayerId;
 }
 
-int32 SKantanCartesianChart::DrawLines(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle) const
+int32 SKantanCartesianChart::DrawLines(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, bool bUseRightYAxis) const
 {
 	++LayerId;
 
-	auto CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry);
+	auto CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry, bUseRightYAxis);
 	auto RangeX = PlotScale.GetXRange(PlotSpaceGeometry.GetLocalSize());
 	auto RangeY = PlotScale.GetYRange(PlotSpaceGeometry.GetLocalSize());
 
@@ -864,15 +896,170 @@ int32 SKantanCartesianChart::DrawLines(const FGeometry& PlotSpaceGeometry, const
 	return LayerId;
 }
 
-int32 SKantanCartesianChart::DrawSeries(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle) const
+int32 SKantanCartesianChart::DrawArea(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, bool bUseRightYAxis) const
+{
+	++LayerId;
+
+	auto CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry, bUseRightYAxis);
+	auto RangeX = PlotScale.GetXRange(PlotSpaceGeometry.GetLocalSize());
+	auto RangeY = PlotScale.GetYRange(PlotSpaceGeometry.GetLocalSize());
+
+	TArray< FVector2D > DrawPoints;
+	GetLinePointsToDraw(Points, RangeX, RangeY, DrawPoints);
+	for (auto& Pnt : DrawPoints)
+	{
+		// @TODO: If transform points like this and draw via plot space geometry, all works.
+		// If leave untransformed and draw via cartesian space geometry, get bizarre clipping behaviour.
+		// Suspect is related to there being a render transform component to the mapping between plot space
+		// and cartesian space. Still seems a little strange though given that clip rect is apparently given
+		// in absolute coords, would expect that if the element is drawn in the correct place, it would be
+		// clipped correctly too.
+		Pnt = CartesianToPlotXform.TransformPoint(Pnt);
+		//
+	}
+
+	auto ChartStyle = GetChartStyle();
+	const FColor FillColor = (SeriesStyle.Color * FLinearColor(1, 1, 1, ChartStyle->DataOpacity)).ToFColor(false);
+
+	FSlateResourceHandle ResourceHandle = FSlateApplication::Get().GetRenderer()->GetResourceHandle(MyBrush);
+	const FSlateShaderResourceProxy* ResourceProxy = ResourceHandle.GetResourceProxy();
+
+	// Need 2 Vertices for each Drawpoint (top & bottom)
+	TArray<FSlateVertex> Verts;
+	Verts.Reserve(DrawPoints.Num() * 2);
+
+	// Need 6 Indices for each Drawpoint except for the first one. (2 triangles == 6 points)
+	TArray<SlateIndex> Indices;
+	Indices.Reserve((DrawPoints.Num() - 1) * 6);
+
+	FSlateRenderTransform PlotPaintGeometry = PlotSpaceGeometry.ToPaintGeometry().GetAccumulatedRenderTransform();
+
+	for (int32 Idx = 0; Idx < DrawPoints.Num(); ++Idx)
+	{
+		// Define both points (top & bottom) for current X position
+		Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(PlotPaintGeometry,
+			DrawPoints[Idx],
+			DrawPoints[Idx],
+			FillColor));
+		Verts.Add(FSlateVertex::Make<ESlateVertexRounding::Disabled>(PlotPaintGeometry,
+			FVector2D(DrawPoints[Idx].X, PlotSpaceGeometry.GetLocalSize().Y),
+			FVector2D(DrawPoints[Idx].X, PlotSpaceGeometry.GetLocalSize().Y),
+			FillColor));
+
+		if (Idx > 0)
+		{
+			// Add Indices
+			Indices.Add(Verts.Num() - 3 - 1);
+			Indices.Add(Verts.Num() - 2 - 1);
+			Indices.Add(Verts.Num() - 1 - 1);
+
+			Indices.Add(Verts.Num() - 1);
+			Indices.Add(Verts.Num() - 1 - 1);
+			Indices.Add(Verts.Num() - 2 - 1);
+		}
+	}
+
+	FSlateDrawElement::MakeCustomVerts(
+		OutDrawElements,
+		LayerId,
+		ResourceHandle,
+		Verts,
+		Indices,
+		nullptr,
+		0,
+		0
+	);
+
+	return LayerId;
+}
+
+int32 SKantanCartesianChart::DrawMarkers(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianMarker > const& Markers, FKantanSeriesStyle const& SeriesStyle) const
+{
+	++LayerId;
+
+	auto CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry);
+	auto RangeX = PlotScale.GetXRange(PlotSpaceGeometry.GetLocalSize());
+	auto RangeY = PlotScale.GetYRange(PlotSpaceGeometry.GetLocalSize());
+
+	TArray< FVector2D > DrawPoints;
+	GetMarkerPointsToDraw(Markers, RangeX, RangeY, DrawPoints);
+	for (auto& Pnt : DrawPoints)
+	{
+		// @TODO: If transform points like this and draw via plot space geometry, all works.
+		// If leave untransformed and draw via cartesian space geometry, get bizarre clipping behaviour.
+		// Suspect is related to there being a render transform component to the mapping between plot space
+		// and cartesian space. Still seems a little strange though given that clip rect is apparently given
+		// in absolute coords, would expect that if the element is drawn in the correct place, it would be
+		// clipped correctly too.
+		Pnt = CartesianToPlotXform.TransformPoint(Pnt);
+		//
+	}
+
+	auto ChartStyle = GetChartStyle();
+
+	// @TODO: Drawing individual segments in attempt to workaround antialiasing issue
+	TArray< FVector2D > SegmentPoints;
+	SegmentPoints.SetNumUninitialized(2);
+
+	for (int32 Idx = 0; Idx < DrawPoints.Num() - 1; Idx += 2)
+	{
+		SegmentPoints[0] = DrawPoints[Idx];
+		SegmentPoints[1] = DrawPoints[Idx + 1];
+
+		// Draw the marker line
+		FSlateDrawElement::MakeLines(
+			OutDrawElements,
+			LayerId,
+			PlotSpaceGeometry.ToPaintGeometry(),
+			SegmentPoints,
+			ESlateDrawEffect::None,
+			ChartStyle->ChartLineColor,
+			bAntialiasDataLines,
+			GetChartStyle()->DataLineThickness
+		);
+
+		if (MarkerDataAsset->ChartEventMarker.Contains(Markers[Idx / 2].MarkerId))
+		{
+			FVector2D MarkerSize = MarkerDataAsset->ChartEventMarker[Markers[Idx / 2].MarkerId].Brush.ImageSize;
+			FPaintGeometry PaintGeometry = PlotSpaceGeometry.ToPaintGeometry();
+			
+			auto MarkerGeom = PlotSpaceGeometry.MakeChild(
+				MarkerSize,
+				FSlateLayoutTransform(FVector2D((SegmentPoints[0].X - MarkerSize.X / 2.0f), -MarkerSize.Y))
+			);
+
+			// Draw the marker image
+			FSlateDrawElement::MakeBox(
+				OutDrawElements,
+				LayerId,
+				MarkerGeom.ToPaintGeometry(),
+				&MarkerDataAsset->ChartEventMarker[Markers[Idx / 2].MarkerId].Brush,
+				ESlateDrawEffect::None,
+				FLinearColor(1, 1, 1, 1)
+			);
+		}
+	}
+
+	return LayerId;
+}
+
+int32 SKantanCartesianChart::DrawSeries(const FGeometry& PlotSpaceGeometry, const FSlateRect& ClipRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, FName const& SeriesId, TArray< FKantanCartesianDatapoint > const& Points, FKantanSeriesStyle const& SeriesStyle, TArray< FKantanCartesianMarker > const& Markers, bool bUseRightYAxis) const
 {
 	if (SeriesConfig[SeriesId].bDrawLines)
 	{
-		LayerId = DrawLines(PlotSpaceGeometry, ClipRect, OutDrawElements, LayerId, SeriesId, Points, SeriesStyle);
+		LayerId = DrawLines(PlotSpaceGeometry, ClipRect, OutDrawElements, LayerId, SeriesId, Points, SeriesStyle, bUseRightYAxis);
 	}
 	if (SeriesConfig[SeriesId].bDrawPoints)
 	{
-		LayerId = DrawPoints(PlotSpaceGeometry, ClipRect, OutDrawElements, LayerId, SeriesId, Points, SeriesStyle);
+		LayerId = DrawPoints(PlotSpaceGeometry, ClipRect, OutDrawElements, LayerId, SeriesId, Points, SeriesStyle, bUseRightYAxis);
+	}
+	if (SeriesConfig[SeriesId].bDrawArea)
+	{
+		LayerId = DrawArea(PlotSpaceGeometry, ClipRect, OutDrawElements, LayerId, SeriesId, Points, SeriesStyle, bUseRightYAxis);
+	}
+	if (Markers.Num() > 0)
+	{
+		LayerId = DrawMarkers(PlotSpaceGeometry, ClipRect, OutDrawElements, LayerId, SeriesId, Markers, SeriesStyle);
 	}
 	return LayerId;
 }
@@ -1137,26 +1324,37 @@ void SKantanCartesianChart::InvalidateCachedMarkerData(EAxis::Type Axis) const
 		case EAxis::Y:
 		YAxisMarkers.Reset();
 		break;
+		case EAxis::Z:
+		RightYAxisMarkers.Reset();
+		break;
 	}
 }
 
-const AxisUtil::FAxisMarkerData& SKantanCartesianChart::GetCachedMarkerData(EAxis::Type Axis, FGeometry const& PlotSpaceGeometry) const
+const AxisUtil::FAxisMarkerData& SKantanCartesianChart::GetCachedMarkerData(EAxis::Type Axis, FGeometry const& PlotSpaceGeometry, bool bDisplayMinutes) const
 {
 	switch(Axis)
 	{
 		case EAxis::X:
 		if(XAxisMarkers.IsSet() == false)
 		{
-			XAxisMarkers = DetermineAxisMarkerData(PlotSpaceGeometry, Axis);
+			XAxisMarkers = DetermineAxisMarkerData(PlotSpaceGeometry, Axis, bDisplayMinutes);
 		}
 		return XAxisMarkers.GetValue();
 
 		case EAxis::Y:
 		if(YAxisMarkers.IsSet() == false)
 		{
-			YAxisMarkers = DetermineAxisMarkerData(PlotSpaceGeometry, Axis);
+			YAxisMarkers = DetermineAxisMarkerData(PlotSpaceGeometry, Axis, bDisplayMinutes);
 		}
 		return YAxisMarkers.GetValue();
+
+		case EAxis::Z:
+		if (RightYAxisMarkers.IsSet() == false)
+		{
+			RightYAxisMarkers = DetermineAxisMarkerData(PlotSpaceGeometry, Axis, bDisplayMinutes);
+		}
+		return RightYAxisMarkers.GetValue();
+
 
 		default:
 		{
@@ -1193,40 +1391,66 @@ float SKantanCartesianChart::GetChartAreaSize(EChartContentArea::Type Area, EAxi
 	}
 }
 
-FSlateRenderTransform SKantanCartesianChart::CartesianToPlotTransform(FGeometry const& PlotSpaceGeometry) const
+FSlateRenderTransform SKantanCartesianChart::CartesianToPlotTransform(FGeometry const& PlotSpaceGeometry, bool bUseRightYAxis) const
 {
-	return PlotScale.GetTransformFromCartesianSpace(PlotSpaceGeometry.GetLocalSize());
+	return PlotScale.GetTransformFromCartesianSpace(PlotSpaceGeometry.GetLocalSize(), bUseRightYAxis);
 }
 
-FFloatRoundingLevel SKantanCartesianChart::DetermineAxisRoundingLevel(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis) const
+FFloatRoundingLevel SKantanCartesianChart::DetermineAxisRoundingLevel(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis, bool bDisplayMinutes) const
 {
 	auto const AxisIdx = (Axis == EAxis::X ? 0 : 1);
-	auto const CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry);
+	auto const CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry, Axis == EAxis::Z);
 	auto const CartesianToPlotAxisTransform = AxisUtil::FAxisTransform::FromTransform2D(CartesianToPlotXform, AxisIdx);
 
 	auto const DefaultMinPlotSpaceLabelSeparation = 50.0f;
-	auto MinPlotSpaceLabelSeparation = DefaultMinPlotSpaceLabelSeparation * (Axis == EAxis::X ? XAxisCfg.MarkerSpacing : YAxisCfg.MarkerSpacing);
+	float MarkerSpacing = 1.0f;
+	switch (Axis)
+	{
+	case EAxis::X:
+		MarkerSpacing = XAxisCfg.MarkerSpacing;
+		break;
+	case EAxis::Y:
+		MarkerSpacing = YAxisCfg.MarkerSpacing;
+		break;
+	case EAxis::Z:
+		MarkerSpacing = RightYAxisCfg.MarkerSpacing;
+		break;
+	}
+
+	auto MinPlotSpaceLabelSeparation = DefaultMinPlotSpaceLabelSeparation * MarkerSpacing;
 	MinPlotSpaceLabelSeparation = FMath::Max(MinPlotSpaceLabelSeparation, 1.0f);
 
-	return AxisUtil::DetermineAxisRoundingLevel(CartesianToPlotAxisTransform, MinPlotSpaceLabelSeparation);
+	return AxisUtil::DetermineAxisRoundingLevel(CartesianToPlotAxisTransform, MinPlotSpaceLabelSeparation, bDisplayMinutes ? 60 : 0);
 }
 
-AxisUtil::FAxisMarkerData SKantanCartesianChart::DetermineAxisMarkerData(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis) const
+AxisUtil::FAxisMarkerData SKantanCartesianChart::DetermineAxisMarkerData(FGeometry const& PlotSpaceGeometry, EAxis::Type Axis, bool bDisplayMinutes) const
 {
 	auto const AxisIdx = Axis == EAxis::X ? 0 : 1;
 
-	auto CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry);
+	auto CartesianToPlotXform = CartesianToPlotTransform(PlotSpaceGeometry, Axis == EAxis::Z);
 	auto CartesianRangeMin = ::Inverse(CartesianToPlotXform).TransformPoint(FVector2D::ZeroVector);
 	auto CartesianRangeMax = ::Inverse(CartesianToPlotXform).TransformPoint(PlotSpaceGeometry.GetLocalSize());
 	auto AxisCartesianRange = FCartesianAxisRange(CartesianRangeMin[AxisIdx], CartesianRangeMax[AxisIdx]).Normalized();
-	
-	auto const& AxisCfg = Axis == EAxis::X ? XAxisCfg : YAxisCfg;
+
+	FCartesianAxisConfig AxisCfg;
+	switch (Axis)
+	{
+	case EAxis::X:
+		AxisCfg = XAxisCfg;
+		break;
+	case EAxis::Y:
+		AxisCfg = YAxisCfg;
+		break;
+	case EAxis::Z:
+		AxisCfg = RightYAxisCfg;
+		break;
+	}
 
 	return AxisUtil::DetermineAxisMarkerData(
-		DetermineAxisRoundingLevel(PlotSpaceGeometry, Axis),
+		DetermineAxisRoundingLevel(PlotSpaceGeometry, Axis, bDisplayMinutes),
 		AxisCartesianRange,
 		AxisCfg.MaxValueDigits
-		);
+	);
 }
 
 void SKantanCartesianChart::AddReferencedObjects(FReferenceCollector& Collector)
